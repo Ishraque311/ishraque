@@ -1,0 +1,51 @@
+# Utility and helper functions for data processing
+# ================================================
+
+# Libraries
+library('glue')
+library('dplyr')
+
+
+# Beautify column names
+beautify_column_names <- function (df) {
+  for (i in 1:ncol(df)) {
+    col_name = colnames(df)[i]
+    col_name <- gsub('\\.', '_', tolower(col_name))
+    col_name <- gsub('__', '_', col_name)
+    col_name <- gsub('_$', '', col_name)
+    col_name <- gsub('__', '_', col_name)
+    colnames(df)[i] = col_name
+  }
+  return(df)
+}
+
+
+# Replace certain values with NA
+replace_with_na <- function (df, values_to_replace) {
+  for (i in values_to_replace){
+    print(i)
+    df[df == i] <- NA
+  }
+  return(df)
+}
+
+
+# Read yearly trouble calls file
+merge_yearly_tc <- function (tc_file_path, year ) {
+
+  df = read.csv(tc_file_path + glue('tc{year}.csv'))
+  df = beautify_column_names(df)
+  
+  tc_count <- df %>% 
+    group_by(equipment) %>% 
+    summarise(counts=n()) %>%
+    as.data.frame()
+  
+  tc_count$tcpm <- tc_count$counts / 12
+  tc_count = setnames(
+    tc_count, 
+    c('equipment', 'counts', 'tcpm'),
+    c('equipment', glue('tc_{year}'), glue('tcpm_{year}'))
+  )
+  return(tc_count)
+}
